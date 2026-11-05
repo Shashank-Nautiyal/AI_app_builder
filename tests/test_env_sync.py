@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from env_sync import auto_fill_project_env
+from codemind.services.env_sync import auto_fill_project_env
 
 
 def _write(path: Path, content: str) -> None:

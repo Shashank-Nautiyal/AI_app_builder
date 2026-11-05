@@ -3,7 +3,7 @@ import pathlib
 import tempfile
 import unittest
 
-import runtime_detection
+from codemind.core import runtime_detection
 
 
 class RuntimeDetectionTests(unittest.TestCase):

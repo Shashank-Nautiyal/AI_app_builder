@@ -1,12 +1,12 @@
 import pytest
-from template_registry import (
+from codemind.core.template_registry import (
     resolve_template,
     resolve_template_from_plan,
     is_frontend_template,
     is_backend_template,
     get_coder_model_tier,
 )
-from schemas import Plan, File
+from codemind.core.schemas import Plan, File
 
 def test_resolve_template_known():
     template = resolve_template("react-vite")

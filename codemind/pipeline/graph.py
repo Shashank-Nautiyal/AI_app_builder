@@ -44,25 +44,25 @@ from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
 from langchain_core.runnables import RunnableConfig
 from langchain.agents import create_agent
 from langchain_cerebras import ChatCerebras
-from prompt import (
+from codemind.pipeline.prompt import (
     clarifier_prompt, planner_existing_repo_prompt, planner_scratch_prompt,
     architect_prompt, requirements_prompt, retriever_prompt,
     memory_prompt, coder_system_prompt, coder_user_prompt, PLACEHOLDER_PATTERNS,
     supervisor_prompt, integrator_system_prompt, integrator_user_prompt,
     github_scout_adapter_system_prompt, github_scout_adapter_user_prompt,
 )
-from schemas import (
+from codemind.core.schemas import (
     PipelineState, Plan, TaskPlan, ImplementationTask, RequirementsSpec, CoderState, RetrievedContext,
     ExecutionResult, DebugResult, TestReport, TestCase, MemoryEntry, MemoryStore, ToolTranscriptEntry, SupervisorDecision,
     ClarifiedRequest, RepoAdaptationPlan, DetectedService, GeneratedFileInfo, File,
 )
-from project_ops import create_project_snapshot, restore_project_snapshot
-from structured_output import repair_structured_json
-from project_context import build_project_context, ProjectContext
-from template_registry import resolve_template, resolve_template_from_plan, is_frontend_template, is_backend_template, get_coder_model_tier, get_all_template_ids
-from env_sync import auto_fill_project_env
-from runtime_detection import build_run_plan
-from pipeline_validation import (
+from codemind.services.project_ops import create_project_snapshot, restore_project_snapshot
+from codemind.core.structured_output import repair_structured_json
+from codemind.services.project_context import build_project_context, ProjectContext
+from codemind.core.template_registry import resolve_template, resolve_template_from_plan, is_frontend_template, is_backend_template, get_coder_model_tier, get_all_template_ids
+from codemind.services.env_sync import auto_fill_project_env
+from codemind.core.runtime_detection import build_run_plan
+from codemind.services.pipeline_validation import (
     build_generated_file_manifest,
     env_placeholder_failure_result,
     format_generated_manifest,
@@ -72,12 +72,13 @@ from pipeline_validation import (
     scan_placeholders,
     validate_project_imports,
 )
-from Tools import (
+from codemind.pipeline.agent_tools import (
     write_file, read_file, list_files, list_project_tree, tree_graph,
     get_current_directory, run_cmd, ddg_search, delete_file, replace_file_content, apply_patch_block, validate_imports
 )
+from codemind.paths import CHECKPOINT_DB, ENV_FILE, GENERATED_PROJECTS_DIR
 
-load_dotenv(override=True)
+load_dotenv(ENV_FILE, override=True)
 
 _MAX_OUTPUT_TOKENS = int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "4096"))
 
@@ -948,7 +949,7 @@ def _resolve_project_root(config: RunnableConfig) -> Path:
     if explicit_root:
         return Path(explicit_root).resolve()
     thread_id = configurable.get("thread_id", "default")
-    return (Path.cwd() / "generated_project" / thread_id).resolve()
+    return (GENERATED_PROJECTS_DIR / thread_id).resolve()
 
 
 def _auto_fill_generated_env(root: Path, label: str) -> dict:
@@ -1369,7 +1370,7 @@ def _run_project_verification(config: RunnableConfig, state: PipelineState | Non
 
     template = resolve_template_from_plan(state.get("plan")) if state and state.get("plan") else None
     if template:
-        from pipeline_validation import validate_template_constraints
+        from codemind.services.pipeline_validation import validate_template_constraints
         template_failure = validate_template_constraints(root, template)
         if template_failure is not None:
             return [template_failure]
@@ -2745,7 +2746,7 @@ def github_search_agent(state: PipelineState, config: RunnableConfig) -> dict:
             **transcript_update,
         }
 
-    from github_scout import (
+    from codemind.services.github_scout import (
         search_github_repos, rank_and_select_repo,
         download_repo_zip, analyze_repo_files, generate_adaptation_plan,
     )
@@ -3326,8 +3327,8 @@ def _runtime_health_check_needed(root: Path) -> bool:
 
 
 def requirements_agent(state: PipelineState, config: RunnableConfig) -> dict:
-    from project_runner import ProjectRunner, validate_dependency, copy_template
-    from Tools import _get_project_root
+    from codemind.services.project_runner import ProjectRunner, validate_dependency, copy_template
+    from codemind.pipeline.agent_tools import _get_project_root
     
     plan = state["plan"]
     task_plan = state["task_plan"]
@@ -3549,11 +3550,11 @@ def github_scout_agent(state: PipelineState, config: RunnableConfig) -> dict:
     analyses it for DB/auth/storage/email/payments patterns, and stores the RepoAdaptationPlan in state.
     Always runs â€” there is no skip/scratch option.
     """
-    from github_scout import (
+    from codemind.services.github_scout import (
         search_github_repos, rank_and_select_repo,
         download_repo_zip, analyze_repo_files, generate_adaptation_plan,
     )
-    from Tools import _get_project_root
+    from codemind.pipeline.agent_tools import _get_project_root
 
     plan = state.get("plan")
     user_prompt = state.get("original_user_prompt") or state.get("user_prompt", "")
@@ -4007,7 +4008,7 @@ def verify_agent(state: PipelineState, config: RunnableConfig) -> dict:
 
 
 def summary_agent(state: PipelineState, config: RunnableConfig) -> dict:
-    from Tools import _get_project_root
+    from codemind.pipeline.agent_tools import _get_project_root
     import subprocess as _sp
     
     root = _get_project_root(config)
@@ -4493,7 +4494,7 @@ def route_after_supervisor(state: PipelineState):
     return "summary"
 
 
-_DEFAULT_DB = Path(os.getenv("DB_PATH", "pipeline_checkpoints.db"))
+_DEFAULT_DB = Path(os.getenv("DB_PATH", str(CHECKPOINT_DB)))
 
 _CHECKPOINT_ALLOWED_MODULES = [
     ("schemas", "Plan"),
@@ -4648,7 +4649,7 @@ def _set_project_status(project_id: str | None, status: str) -> None:
     if not project_id:
         return
     try:
-        from database import ProjectGeneration, transactional_session
+        from codemind.core.database import ProjectGeneration, transactional_session
         with transactional_session() as session:
             db_proj = session.query(ProjectGeneration).filter_by(id=project_id).first()
             if db_proj:

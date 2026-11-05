@@ -1,6 +1,6 @@
 import unittest
 
-import database
+from codemind.core import database
 
 
 class DatabaseHealthTests(unittest.TestCase):

@@ -14,6 +14,8 @@ from pathlib import Path
 import re
 from typing import Iterable
 
+from codemind.paths import ENV_FILE
+
 
 _ENV_NAME_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
 _ENV_ASSIGNMENT_RE = re.compile(r"^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=(.*)$")
@@ -470,7 +472,10 @@ def auto_fill_project_env(
     if os.getenv("AUTO_FILL_GENERATED_ENV", "1").strip().lower() in {"0", "false", "no", "off"}:
         return result
 
-    source_path = Path(source_env_path).resolve() if source_env_path else Path(__file__).with_name(".env")
+    if source_env_path:
+        source_path = Path(source_env_path).resolve()
+    else:
+        source_path = ENV_FILE
     values = _source_values(source_path)
     scan = _scan_project(root)
     needed_keys = _expand_needed_keys(scan, values)

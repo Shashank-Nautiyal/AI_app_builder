@@ -8,9 +8,9 @@ import subprocess
 import time
 import urllib.request
 
-from runtime_detection import build_run_plan
-from schemas import ExecutionResult, GeneratedFileInfo
-from template_registry import TemplateConfig
+from codemind.core.runtime_detection import build_run_plan
+from codemind.core.schemas import ExecutionResult, GeneratedFileInfo
+from codemind.core.template_registry import TemplateConfig
 
 
 SKIP_DIRS = {

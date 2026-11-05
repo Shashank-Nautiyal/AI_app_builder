@@ -3,14 +3,14 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from pipeline_validation import (
+from codemind.services.pipeline_validation import (
     build_generated_file_manifest,
     placeholder_failure_result,
     scan_placeholders,
     run_runtime_health_check,
     validate_project_imports,
 )
-from prompt import PLACEHOLDER_PATTERNS
+from codemind.pipeline.prompt import PLACEHOLDER_PATTERNS
 
 
 class PipelineValidationTests(unittest.TestCase):
@@ -84,7 +84,7 @@ class PipelineValidationTests(unittest.TestCase):
                 "commands": [{"name": "Frontend", "cmd": "python -c \"import sys; sys.exit(3)\""}],
                 "serve_port": 3999,
             }
-            with patch("pipeline_validation.build_run_plan", return_value=fake_plan):
+            with patch("codemind.services.pipeline_validation.build_run_plan", return_value=fake_plan):
                 result = run_runtime_health_check(root, timeout_seconds=2)
 
             self.assertIsNotNone(result)

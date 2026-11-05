@@ -1,9 +1,17 @@
 import os
 import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from codemind.paths import TEMPLATES_DIR
+
 
 def main():
-    os.makedirs("templates", exist_ok=True)
-    os.chdir("templates")
+    os.makedirs(TEMPLATES_DIR, exist_ok=True)
+    os.chdir(TEMPLATES_DIR)
     
     print("Scaffolding react-vite...")
     subprocess.run("npx -y create-vite@latest react-vite --template react", shell=True)

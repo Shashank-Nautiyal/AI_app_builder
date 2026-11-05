@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from structured_output import repair_structured_json
+from codemind.core.structured_output import repair_structured_json
 
 
 class StructuredOutputTests(unittest.TestCase):

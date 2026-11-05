@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-import github_scout
+from codemind.services import github_scout
 
 
 class GitHubScoutSearchTests(unittest.TestCase):

@@ -1,6 +1,6 @@
 import pytest
-from project_context import build_project_context
-from schemas import Plan, File
+from codemind.services.project_context import build_project_context
+from codemind.core.schemas import Plan, File
 
 def test_build_project_context_with_known_template():
     plan = Plan(

@@ -5,10 +5,14 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine, Column, String, DateTime, Text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
+from codemind.paths import PROJECTS_DB
+
+_DEFAULT_DATABASE_URL = f"sqlite:///{PROJECTS_DB.as_posix()}"
+
 DATABASE_URL = (
     os.getenv("PROJECTS_DATABASE_URL")
     or os.getenv("APP_DATABASE_URL")
-    or "sqlite:///./projects.db"
+    or _DEFAULT_DATABASE_URL
 )
 
 engine_kwargs = {"connect_args": {"check_same_thread": False}} if DATABASE_URL.startswith("sqlite") else {}

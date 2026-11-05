@@ -27,7 +27,9 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-load_dotenv(override=True)
+from codemind.paths import ENV_FILE
+
+load_dotenv(ENV_FILE, override=True)
 
 _GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "").strip()
 _GITHUB_SEARCH_QUERY_LIMIT = max(1, int(os.getenv("GITHUB_SEARCH_QUERY_LIMIT", "4")))

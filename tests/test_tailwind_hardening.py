@@ -3,8 +3,8 @@ import pathlib
 import tempfile
 import unittest
 
-import graph
-from schemas import File, Plan
+from codemind.pipeline import graph
+from codemind.core.schemas import File, Plan
 
 
 def tailwind_plan() -> Plan:

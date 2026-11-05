@@ -4,7 +4,7 @@ import unittest
 
 class ServerContractTests(unittest.TestCase):
     def test_server_has_error_handlers_and_success_envelope(self):
-        server_source = pathlib.Path(__file__).resolve().parents[1] / "server.py"
+        server_source = pathlib.Path(__file__).resolve().parents[1] / "codemind" / "api" / "server.py"
         content = server_source.read_text(encoding="utf-8")
         self.assertIn("def api_success(", content)
         self.assertIn("@app.exception_handler(HTTPException)", content)
@@ -12,7 +12,7 @@ class ServerContractTests(unittest.TestCase):
 
     def test_server_uses_run_plan_and_final_refresh_delay(self):
         root = pathlib.Path(__file__).resolve().parents[1]
-        server_content = (root / "server.py").read_text(encoding="utf-8")
+        server_content = (root / "codemind" / "api" / "server.py").read_text(encoding="utf-8")
         app_shell_content = (root / "frontend" / "src" / "components" / "AppShell.jsx").read_text(encoding="utf-8")
         sidebar_content = (root / "frontend" / "src" / "components" / "ProjectSidebar.jsx").read_text(encoding="utf-8")
 

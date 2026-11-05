@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Tuple
 
-from schemas import Plan
-from template_registry import TemplateConfig, resolve_template, resolve_template_from_plan
+from codemind.core.schemas import Plan
+from codemind.core.template_registry import TemplateConfig, resolve_template, resolve_template_from_plan
 
 @dataclass(frozen=True)
 class ProjectContext:

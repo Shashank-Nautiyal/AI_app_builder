@@ -4,6 +4,8 @@ import urllib.request
 import json
 from pathlib import Path
 
+from codemind.paths import TEMPLATES_DIR
+
 DEPENDENCY_MAP = {
     # Frontend (React + Vite + Tailwind)
     "frontend": ["react", "react-dom", "vite", "@vitejs/plugin-react", "tailwindcss", "postcss", "autoprefixer"],
@@ -93,13 +95,13 @@ def validate_dependency(dep: str, package_manager: str = "npm") -> bool:
 
 def copy_template(template_name: str, target_path: str | Path):
     target = Path(target_path).resolve()
-    from template_registry import resolve_template
+    from codemind.core.template_registry import resolve_template
     template = resolve_template(template_name)
     if not template:
         print(f"[ProjectRunner] Warning: Template {template_name} does not exist in registry.")
         return False
         
-    template_dir = Path(__file__).parent / "templates" / template.template_path
+    template_dir = TEMPLATES_DIR / template.template_path
     
     if not template_dir.exists():
         print(f"[ProjectRunner] Warning: Template dir {template_dir} does not exist. Generating raw.")
@@ -157,7 +159,7 @@ class ProjectRunner:
 
     def get_install_command(self) -> str | None:
         ptype = self.detect_type()
-        from template_registry import resolve_template
+        from codemind.core.template_registry import resolve_template
         template = resolve_template(ptype)
         if template:
             return template.install_command
@@ -165,7 +167,7 @@ class ProjectRunner:
 
     def provision_backend(self, app_name: str):
         ptype = self.detect_type()
-        from template_registry import resolve_template
+        from codemind.core.template_registry import resolve_template
         template = resolve_template(ptype)
         if not template:
             return
@@ -221,7 +223,7 @@ class ProjectRunner:
         is_win = sys.platform == "win32"
         ptype = self.detect_type()
         
-        from template_registry import resolve_template
+        from codemind.core.template_registry import resolve_template
         template = resolve_template(ptype)
         if not template:
             if is_win:

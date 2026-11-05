@@ -21,7 +21,7 @@ In simple terms:
 ```mermaid
 flowchart TD
   A["User prompt in UI"] --> B["FastAPI /api/generate"]
-  B --> C["graph.py LangGraph pipeline"]
+  B --> C["codemind/pipeline/graph.py LangGraph pipeline"]
   C --> D["Clarifier"]
   D --> E["Supervisor"]
   E --> F["GitHub search / scout"]
@@ -53,10 +53,10 @@ The same pipeline is also reused for:
 This is the launch script.
 
 - Starts `uvicorn`
-- Loads `server:app`
+- Loads `codemind.api.server:app`
 - Supports reload mode through `UVICORN_RELOAD`
 
-### `server.py`
+### `codemind/api/server.py`
 
 This is the main FastAPI application.
 
@@ -70,7 +70,7 @@ It provides:
 - run/stop and terminal websockets
 - live streaming of generation events
 
-### `graph.py`
+### `codemind/pipeline/graph.py`
 
 This is the orchestration engine.
 
@@ -115,11 +115,11 @@ The frontend sends a prompt to:
 
 - `POST /api/generate`
 
-In `server.py`, this creates a new `thread_id`, stores a `ProjectGeneration` row in SQLite, and starts the generation pipeline in the background.
+In `codemind/api/server.py`, this creates a new `thread_id`, stores a `ProjectGeneration` row in SQLite, and starts the generation pipeline in the background.
 
 ### 2. Planning and orchestration
 
-The generation logic lives in `graph.py`.
+The generation logic lives in `codemind/pipeline/graph.py`.
 
 The pipeline typically does this:
 
@@ -167,9 +167,9 @@ That folder becomes the working project for:
 
 The project is checked by:
 
-- `pipeline_validation.py`
-- `runtime_detection.py`
-- `project_ops.py`
+- `codemind/services/pipeline_validation.py`
+- `codemind/core/runtime_detection.py`
+- `codemind/services/project_ops.py`
 
 These modules help with:
 
@@ -279,9 +279,9 @@ The project supports multiple model backends, with the main orchestration code p
 - OpenRouter
 - Hugging Face
 
-### Agent tools used by `graph.py`
+### Agent tools used by `codemind/pipeline/graph.py`
 
-From `Tools.py`, the pipeline uses sandboxed utilities such as:
+From `codemind/pipeline/agent_tools.py`, the pipeline uses sandboxed utilities such as:
 
 - `write_file`
 - `read_file`
@@ -302,7 +302,7 @@ These tools let the AI agent inspect and modify the project safely.
 
 ## Main Functions By Module
 
-### `server.py`
+### `codemind/api/server.py`
 
 Important functions and routes:
 
@@ -338,7 +338,7 @@ Routes:
 - `WS /ws/stream/{thread_id}`
 - `WS /ws/terminal/{thread_id}`
 
-### `graph.py`
+### `codemind/pipeline/graph.py`
 
 Important orchestration helpers:
 
@@ -353,7 +353,7 @@ Important orchestration helpers:
 - `prewarm_llm_models()`
   - optionally loads model backends early
 
-### `project_ops.py`
+### `codemind/services/project_ops.py`
 
 Important helpers:
 
@@ -363,14 +363,14 @@ Important helpers:
 - `create_project_snapshot()`
 - `restore_project_snapshot()`
 
-### `runtime_detection.py`
+### `codemind/core/runtime_detection.py`
 
 Important helpers:
 
 - `detect_python_app_file()`
 - `build_run_plan()`
 
-### `env_sync.py`
+### `codemind/services/env_sync.py`
 
 Important helper:
 
@@ -378,7 +378,7 @@ Important helper:
 
 This module copies matching environment values into generated projects so they can run locally without hardcoding secrets.
 
-### `pipeline_validation.py`
+### `codemind/services/pipeline_validation.py`
 
 Important helpers:
 
@@ -389,7 +389,7 @@ Important helpers:
 - `validate_project_imports()`
 - `run_runtime_health_check()`
 
-### `database.py`
+### `codemind/core/database.py`
 
 Important pieces:
 
@@ -421,12 +421,12 @@ The `templates/` folder is the starter library for project generation and repo c
 
 The workflow uses templates in two main ways:
 
-1. `scaffold.py`
+1. `scripts/scaffold_templates.py`
    - creates or refreshes starter template folders
-2. `project_runner.py`
+2. `codemind/services/project_runner.py`
    - copies a template into a target project when appropriate
 
-`project_runner.py` checks the project type and decides whether the project should be treated as:
+`codemind/services/project_runner.py` checks the project type and decides whether the project should be treated as:
 
 - `react-vite`
 - `nextjs-app`
@@ -465,38 +465,53 @@ Templates give the generator:
 Here is the important structure of the repo, ignoring large generated artifacts like `node_modules`, `.next`, and databases:
 
 ```text
-D:\project
-|-- frontend
-|   |-- src
-|   |   |-- components
-|   |   |-- hooks
-|   |   `-- services
+College_project/
+|-- codemind/
+|   |-- api/
+|   |   |-- server.py
+|   |   `-- ui_events.py
+|   |-- core/
+|   |   |-- database.py
+|   |   |-- runtime_detection.py
+|   |   |-- schemas.py
+|   |   |-- structured_output.py
+|   |   `-- template_registry.py
+|   |-- pipeline/
+|   |   |-- agent_tools.py
+|   |   |-- graph.py
+|   |   `-- prompt.py
+|   |-- services/
+|   |   |-- env_sync.py
+|   |   |-- github_scout.py
+|   |   |-- pipeline_validation.py
+|   |   |-- project_context.py
+|   |   |-- project_ops.py
+|   |   `-- project_runner.py
+|   |-- paths.py
+|   |-- runner.py
+|   `-- __main__.py
+|-- docs/
+|-- frontend/
+|   |-- src/
+|   |   |-- components/
+|   |   |-- hooks/
+|   |   `-- services/
 |   |-- index.html
 |   |-- package.json
 |   `-- vite.config.js
-|-- templates
-|   |-- electron-react-app
-|   |-- fastapi
-|   |-- fastapi-sqlite
-|   |-- nextjs-app
-|   |-- python-tkinter-sqlite
-|   |-- react-vite
-|   `-- streamlit-app
-|-- tests
-|-- server.py
-|-- graph.py
-|-- prompt.py
-|-- Tools.py
-|-- schemas.py
-|-- project_ops.py
-|-- runtime_detection.py
-|-- pipeline_validation.py
-|-- env_sync.py
-|-- scaffold.py
-|-- project_runner.py
-|-- database.py
+|-- generated_project/      # runtime output (one demo is committed)
+|-- scripts/
+|   `-- scaffold_templates.py
+|-- static/
+|-- templates/
+|   |-- api/
+|   |-- dashboard/
+|   |-- desktop/
+|   `-- webapp/
+|-- tests/
 |-- run.py
-`-- static
+|-- pyproject.toml
+`-- uv.lock
 ```
 
 ### Runtime/generated folders

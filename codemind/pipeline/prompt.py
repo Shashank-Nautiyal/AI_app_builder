@@ -4,7 +4,7 @@ prompt.py — prompt builders for every pipeline agent.
 
 from __future__ import annotations
 
-from template_registry import TEMPLATE_REGISTRY, TemplateConfig
+from codemind.core.template_registry import TEMPLATE_REGISTRY, TemplateConfig
 
 def _build_dynamic_template_list() -> str:
     lines = []

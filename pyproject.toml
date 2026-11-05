@@ -42,3 +42,7 @@ full = [
 [tool.uv]
 # Pin the interpreter range used when resolving the lock file.
 # Python 3.12/3.13 is recommended; 3.14 works but emits a pydantic V1 warning.
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

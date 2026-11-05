@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, FrozenSet
 
-from schemas import Plan
+from codemind.core.schemas import Plan
 
 @dataclass(frozen=True)
 class VerifierConfig:

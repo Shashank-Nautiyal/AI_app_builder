@@ -1,6 +1,6 @@
 import unittest
 
-import prompt
+from codemind.pipeline import prompt
 
 
 class PromptContractTests(unittest.TestCase):

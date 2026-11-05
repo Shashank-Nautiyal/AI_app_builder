@@ -3,8 +3,8 @@ import pathlib
 import tempfile
 import unittest
 
-import graph
-from schemas import CoderState, File, ImplementationTask, Plan, TaskPlan
+from codemind.pipeline import graph
+from codemind.core.schemas import CoderState, File, ImplementationTask, Plan, TaskPlan
 
 
 class CompletionGuardRepairTests(unittest.TestCase):

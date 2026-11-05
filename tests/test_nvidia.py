@@ -5,7 +5,7 @@ import unittest
 class NvidiaChatContractTests(unittest.TestCase):
     def test_server_chatbot_uses_nvidia_model(self):
         root = pathlib.Path(__file__).resolve().parents[1]
-        content = (root / "server.py").read_text(encoding="utf-8")
+        content = (root / "codemind" / "api" / "server.py").read_text(encoding="utf-8")
 
         self.assertIn("from langchain_nvidia_ai_endpoints import ChatNVIDIA", content)
         self.assertIn("def _make_chat_llm", content)

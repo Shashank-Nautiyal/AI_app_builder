@@ -5,7 +5,7 @@ import unittest
 
 class ModelFallbackContractTests(unittest.TestCase):
     def test_graph_has_role_based_limit_fallback_routes(self):
-        graph_source = pathlib.Path(__file__).resolve().parents[1] / "graph.py"
+        graph_source = pathlib.Path(__file__).resolve().parents[1] / "codemind" / "pipeline" / "graph.py"
         content = graph_source.read_text(encoding="utf-8")
 
         self.assertIn("_LIMIT_FALLBACK_ROUTES", content)
@@ -23,7 +23,7 @@ class ModelFallbackContractTests(unittest.TestCase):
         self.assertIn("_run_agent_with_model_fallback", content)
 
     def test_fireworks_is_reserved_for_coding_routes(self):
-        graph_source = pathlib.Path(__file__).resolve().parents[1] / "graph.py"
+        graph_source = pathlib.Path(__file__).resolve().parents[1] / "codemind" / "pipeline" / "graph.py"
         content = graph_source.read_text(encoding="utf-8")
         routes = dict(re.findall(r'"([^"]+)": \[([^\]]+)\]', content))
 
@@ -34,7 +34,7 @@ class ModelFallbackContractTests(unittest.TestCase):
         self.assertIn("FIREWORKS_DEEPSEEK_LLM", routes["coder"])
 
     def test_graph_treats_credit_exhaustion_as_limit_error(self):
-        graph_source = pathlib.Path(__file__).resolve().parents[1] / "graph.py"
+        graph_source = pathlib.Path(__file__).resolve().parents[1] / "codemind" / "pipeline" / "graph.py"
         content = graph_source.read_text(encoding="utf-8").lower()
 
         self.assertIn("payment required", content)
@@ -45,7 +45,7 @@ class ModelFallbackContractTests(unittest.TestCase):
 
     def test_server_and_ui_expose_auto_fallback_toggle(self):
         root = pathlib.Path(__file__).resolve().parents[1]
-        server_content = (root / "server.py").read_text(encoding="utf-8")
+        server_content = (root / "codemind" / "api" / "server.py").read_text(encoding="utf-8")
         api_content = (root / "frontend" / "src" / "services" / "api.js").read_text(encoding="utf-8")
         sidebar_content = (root / "frontend" / "src" / "components" / "ProjectSidebar.jsx").read_text(encoding="utf-8")
 

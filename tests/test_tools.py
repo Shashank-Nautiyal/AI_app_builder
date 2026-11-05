@@ -1,7 +1,7 @@
 import pathlib
 import unittest
 
-import Tools
+from codemind.pipeline import agent_tools as Tools
 
 
 class ToolsSafetyTests(unittest.TestCase):

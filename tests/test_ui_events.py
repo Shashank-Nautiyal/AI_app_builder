@@ -2,7 +2,7 @@ import unittest
 
 from pydantic import ValidationError
 
-from ui_events import build_ui_event
+from codemind.api.ui_events import build_ui_event
 
 
 class UIEventTests(unittest.TestCase):

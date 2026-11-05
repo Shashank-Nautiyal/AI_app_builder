@@ -26,7 +26,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
-from pipeline_validation import validate_project_imports
+from codemind.paths import GENERATED_PROJECTS_DIR, PROJECTS_DB
+from codemind.services.pipeline_validation import validate_project_imports
 
 _SANDBOX_IMAGE   = os.getenv("SANDBOX_IMAGE",   "python:3.11-slim")
 _NODE_SANDBOX_IMAGE = os.getenv("NODE_SANDBOX_IMAGE", "node:20-slim")
@@ -49,7 +50,7 @@ def _get_project_root(config: RunnableConfig) -> pathlib.Path:
         root = pathlib.Path(explicit_root)
     else:
         thread_id = configurable.get("thread_id", "default")
-        root = pathlib.Path.cwd() / "generated_project" / thread_id
+        root = GENERATED_PROJECTS_DIR / thread_id
     root.mkdir(parents=True, exist_ok=True)
     return root
 
@@ -404,7 +405,7 @@ def delete_file(path: str, config: RunnableConfig, reason: str = "") -> str:
         project_id = thread_id.split("-update-")[0]
         latest_request = ""
         try:
-            conn = sqlite3.connect("projects.db")
+            conn = sqlite3.connect(PROJECTS_DB)
             cur = conn.cursor()
             cur.execute("SELECT prompt FROM project_generations WHERE id = ?", (project_id,))
             row = cur.fetchone()
@@ -716,7 +717,7 @@ def tree_graph(config: RunnableConfig, directory: str = ".") -> str:
 
 def init_project_root() -> str:
     """Create the base generated_project directory if it doesn't exist yet."""
-    root = pathlib.Path.cwd() / "generated_project"
+    root = GENERATED_PROJECTS_DIR
     root.mkdir(parents=True, exist_ok=True)
     return str(root)
 

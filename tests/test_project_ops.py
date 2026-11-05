@@ -3,8 +3,8 @@ import tempfile
 import unittest
 import zipfile
 
-import project_ops
-import project_runner
+from codemind.services import project_ops
+from codemind.services import project_runner
 
 
 class ProjectOpsTests(unittest.TestCase):

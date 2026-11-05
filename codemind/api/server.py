@@ -31,15 +31,21 @@ from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import threading
-from database import get_db, ProjectGeneration, Base, engine, init_database, verify_database_health, transactional_session
+from codemind.core.database import get_db, ProjectGeneration, Base, engine, init_database, verify_database_health, transactional_session
 from pydantic import BaseModel, Field
 from langchain_core.messages import SystemMessage, HumanMessage as LCHumanMessage, AIMessage, ToolMessage
 from langchain_core.tools import tool
 
-from project_ops import create_project_snapshot, extract_project_zip, import_project_files
-from runtime_detection import build_run_plan
-from ui_events import build_ui_event
-from env_sync import auto_fill_project_env
+from codemind.services.project_ops import create_project_snapshot, extract_project_zip, import_project_files
+from codemind.core.runtime_detection import build_run_plan
+from codemind.api.ui_events import build_ui_event
+from codemind.services.env_sync import auto_fill_project_env
+from codemind.paths import (
+    CHECKPOINT_DB,
+    GENERATED_PROJECTS_DIR,
+    STATIC_DIR,
+    ensure_runtime_dirs,
+)
 
 _graph_module = None
 
@@ -47,7 +53,7 @@ _graph_module = None
 def _get_graph():
     global _graph_module
     if _graph_module is None:
-        import graph as graph_module
+        from codemind.pipeline import graph as graph_module
 
         _graph_module = graph_module
     return _graph_module
@@ -246,7 +252,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-os.makedirs("static", exist_ok=True)
+ensure_runtime_dirs()
 
 
 @app.get("/health")
@@ -254,10 +260,10 @@ async def health():
     return {"status": "ok"}
 
 
-def _verify_checkpoint_db(path: str = "pipeline_checkpoints.db") -> bool:
+def _verify_checkpoint_db(path: str | None = None) -> bool:
     import sqlite3
     try:
-        conn = sqlite3.connect(path)
+        conn = sqlite3.connect(path or str(CHECKPOINT_DB))
         conn.execute("PRAGMA integrity_check;").fetchone()
         conn.close()
         return True
@@ -309,7 +315,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 @app.get("/")
 def serve_root():
     """Serve the main UI at the root URL."""
-    react_index = os.path.join("static", "react", "index.html")
+    react_index = STATIC_DIR / "react" / "index.html"
     if not os.path.exists(react_index):
         raise HTTPException(
             status_code=404,
@@ -317,7 +323,7 @@ def serve_root():
         )
     return FileResponse(react_index)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 stream_queues = {}
 running_apps = {}
@@ -424,7 +430,7 @@ class SentenceTransformerProjectEmbedder:
 
 
 def _get_project_index_dir(thread_id: str) -> str:
-    return os.path.abspath(os.path.join("generated_project", PROJECT_CONTEXT_INDEX_ROOT, thread_id))
+    return os.path.abspath(os.path.join(str(GENERATED_PROJECTS_DIR), PROJECT_CONTEXT_INDEX_ROOT, thread_id))
 
 
 def _get_project_manifest_path(thread_id: str) -> str:
@@ -771,7 +777,7 @@ def run_project_generation(
     auto_model_fallback_on_limit: bool = True,
     is_resume: bool = False,
 ):
-    db_path = "pipeline_checkpoints.db"
+    db_path = str(CHECKPOINT_DB)
     final_status = "done"
     final_message = None
     final_done_payload = {
@@ -815,7 +821,7 @@ def run_project_generation(
                 state = None
             elif is_update:
                 state = graph._update_state(prompt, rollback_snapshot_path=rollback_snapshot_path)
-                original_project_dir = os.path.abspath(os.path.join("generated_project", thread_id))
+                original_project_dir = os.path.abspath(os.path.join(str(GENERATED_PROJECTS_DIR), thread_id))
                 config = graph._config(
                     f"{thread_id}-update-{uuid.uuid4().hex[:6]}",
                     project_root=original_project_dir,
@@ -856,7 +862,7 @@ def run_project_generation(
                                 idx = cs.current_step_idx - 1
                                 if idx >= 0 and idx < len(cs.task_plan.implementation_steps):
                                     task = cs.task_plan.implementation_steps[idx]
-                                    filepath = os.path.join("generated_project", thread_id, task.filepath)
+                                    filepath = os.path.join(str(GENERATED_PROJECTS_DIR), thread_id, task.filepath)
                                     if os.path.exists(filepath):
                                         with open(filepath, "r", encoding="utf-8") as f:
                                             emit_event("file_update", {"filepath": task.filepath, "content": f.read()}, agent=node_name)
@@ -866,13 +872,13 @@ def run_project_generation(
                             if dbg_res_list and len(dbg_res_list) > 0:
                                 last_dbg = dbg_res_list[-1]
                                 for modified_file in last_dbg.files_modified:
-                                    filepath = os.path.join("generated_project", thread_id, modified_file)
+                                    filepath = os.path.join(str(GENERATED_PROJECTS_DIR), thread_id, modified_file)
                                     if os.path.exists(filepath):
                                         with open(filepath, "r", encoding="utf-8") as f:
                                             emit_event("file_update", {"filepath": modified_file, "content": f.read()}, agent=node_name)
                         
                         if node_name == "update_coder":
-                            project_dir = os.path.abspath(os.path.join("generated_project", thread_id))
+                            project_dir = os.path.abspath(os.path.join(str(GENERATED_PROJECTS_DIR), thread_id))
                             if os.path.exists(project_dir):
                                 for root_dir, _, filenames in os.walk(project_dir):
                                     for filename in filenames:
@@ -1165,7 +1171,7 @@ async def upload_project_archive(
 
 
 def _get_project_dir(thread_id: str) -> str:
-    return os.path.abspath(os.path.join("generated_project", thread_id))
+    return os.path.abspath(os.path.join(str(GENERATED_PROJECTS_DIR), thread_id))
 
 
 def _build_project_structure(project_dir: str) -> list[dict]:
@@ -1788,7 +1794,7 @@ async def delete_project(thread_id: str, db: Session = Depends(get_db)):
         
     import sqlite3
     try:
-        conn = sqlite3.connect("pipeline_checkpoints.db")
+        conn = sqlite3.connect(str(CHECKPOINT_DB))
         cursor = conn.cursor()
         cursor.execute("DELETE FROM checkpoints WHERE thread_id = ?", (thread_id,))
         cursor.execute("DELETE FROM writes WHERE thread_id = ?", (thread_id,))
@@ -1811,7 +1817,7 @@ def get_project(thread_id: str, db: Session = Depends(get_db)):
     
     status = db_proj.status
     files = []
-    project_dir = os.path.abspath(os.path.join("generated_project", thread_id))
+    project_dir = os.path.abspath(os.path.join(str(GENERATED_PROJECTS_DIR), thread_id))
     # Directories to skip — these make loading extremely slow
     if os.path.exists(project_dir):
         for root, dirs, filenames in os.walk(project_dir):
@@ -1866,7 +1872,7 @@ async def save_file(thread_id: str, payload: SaveFileRequest):
     filepath = payload.filepath
     content = payload.content
         
-    project_dir = os.path.abspath(os.path.join("generated_project", thread_id))
+    project_dir = os.path.abspath(os.path.join(str(GENERATED_PROJECTS_DIR), thread_id))
     full_path = os.path.abspath(os.path.join(project_dir, filepath))
     
     if not full_path.startswith(project_dir):
@@ -1889,7 +1895,7 @@ async def save_file(thread_id: str, payload: SaveFileRequest):
 
 @app.get("/api/projects/{thread_id}/download")
 def download_project(thread_id: str):
-    project_dir = os.path.abspath(os.path.join("generated_project", thread_id))
+    project_dir = os.path.abspath(os.path.join(str(GENERATED_PROJECTS_DIR), thread_id))
     if not os.path.exists(project_dir):
         raise HTTPException(status_code=404, detail="Project not found")
         
@@ -1994,7 +2000,7 @@ active_terminals = {}
 @app.websocket("/ws/terminal/{thread_id}/{term_id}")
 async def terminal_websocket(websocket: WebSocket, thread_id: str, term_id: str = "default"):
     await websocket.accept()
-    project_dir = os.path.abspath(os.path.join("generated_project", thread_id))
+    project_dir = os.path.abspath(os.path.join(str(GENERATED_PROJECTS_DIR), thread_id))
     if not os.path.exists(project_dir):
         await websocket.send_text("Project not found.\r\n")
         await websocket.close()
@@ -2022,7 +2028,7 @@ def get_free_port():
 
 @app.post("/api/projects/{thread_id}/run")
 def run_project_app(thread_id: str):
-    project_dir = os.path.abspath(os.path.join("generated_project", thread_id))
+    project_dir = os.path.abspath(os.path.join(str(GENERATED_PROJECTS_DIR), thread_id))
     if not os.path.exists(project_dir):
         raise HTTPException(status_code=404, detail="Project directory not found")
     return build_run_plan(project_dir)
