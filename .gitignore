@@ -1,0 +1,105 @@
+# ---------------------------------------------------------------------------
+# Secrets / environment
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+.eggs/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+build/
+dist/
+wheels/
+sdist/
+
+# ---------------------------------------------------------------------------
+# Node / JavaScript / TypeScript
+# ---------------------------------------------------------------------------
+node_modules/
+.next/
+.nuxt/
+out/
+.vite/
+.turbo/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vercel/
+
+# Electron
+.electron/
+release/
+dist_electron/
+
+# ---------------------------------------------------------------------------
+# Runtime data and databases (generated while the app runs)
+# ---------------------------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+projects.db.bak-*
+pipeline_checkpoints.db
+run_session.json
+# Generated projects are runtime output, except the committed calculator demo.
+generated_project/*
+!generated_project/run-db6b7818399c/
+
+# ---------------------------------------------------------------------------
+# Logs and temporary files
+# ---------------------------------------------------------------------------
+*.log
+*.tmp
+*.bak
+*.bak-*
+*.cache
+
+# ---------------------------------------------------------------------------
+# OS / editor
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---------------------------------------------------------------------------
+# Notes
+# ---------------------------------------------------------------------------
+# Keep these committed on purpose:
+#   uv.lock, frontend/package-lock.json, templates/**/package-lock.json
+#   .python-version, pyproject.toml
+#   static/react/  (prebuilt UI so `uv run python run.py` works immediately)
+#   templates/**/.env.example  (placeholders, never real secrets)
+#
+# Ignore nested template repo metadata only if one is left in place. A nested
+# .git directory should be deleted instead, otherwise git adds that template
+# as a broken submodule/gitlink rather than committing its source files.
+templates/**/.git/
